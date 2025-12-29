@@ -16,4 +16,25 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('login', [\App\Http\Controllers\AuthController::class, 'login']);
 Route::post('register', [\App\Http\Controllers\AuthController::class, 'register']);
-Route::post('logout', [\App\Http\Controllers\AuthController::class, 'logout'])->middleware('auth:api');
+
+Route::middleware('auth:api')->group(function () {
+    // Auth routes
+    Route::prefix('auth')->group(function () {
+        Route::post('logout', [\App\Http\Controllers\AuthController::class, 'logout']);
+        Route::get('me', [\App\Http\Controllers\AuthController::class, 'me']);
+    });
+
+    // Drone routes
+    Route::prefix('drones')->group(function () {
+        Route::get('/', [\App\Http\Controllers\DroneController::class, 'index']);
+        Route::get('/online', [\App\Http\Controllers\DroneController::class, 'online']);
+        Route::get('/nearby', [\App\Http\Controllers\DroneController::class, 'nearby']);
+        Route::get('/dangerous', [\App\Http\Controllers\DroneController::class, 'dangerous']);
+        Route::get('/{serial}/flight-path', [\App\Http\Controllers\DroneController::class, 'flightPath']);
+
+        // Admin only routes
+        Route::middleware('role:admin')->group(function () {
+            Route::post('/{serial}/mark-safe', [\App\Http\Controllers\DroneController::class, 'markSafe']);
+        });
+    });
+});
