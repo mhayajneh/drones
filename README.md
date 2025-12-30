@@ -27,7 +27,7 @@ A Laravel-based backend system for real-time drone tracking via MQTT with RESTfu
 
 1. **Clone and install dependencies**
 ```bash
-unzip sager-drone-system.zip
+unzip sager-drone.zip OR Clone the repo
 cd sager-drone-system
 composer install
 ```
@@ -63,9 +63,9 @@ php artisan migrate
 php artisan db:seed
 ```
 
-5. **Generate JWT secret**
+5. **Generate JWT Passport Tokens**
 ```bash
-php artisan jwt:secret
+php artisan passport:install
 ```
 
 6. **Start the application**
