@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: sager_drone_app
+        restart: unless-stopped
+        working_dir: /var/www
+        volumes:
+            - ./:/var/www
+            - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+        networks:
+            - sager-drone
+        depends_on:
+            - db
+            - mqtt
+        environment:
+            - DB_HOST=db
+            - MQTT_HOST=mqtt
+
+    nginx:
+        image: nginx:alpine
+        container_name: sager_drone_nginx
+        restart: unless-stopped
+        ports:
+            - "8000:80"
+        volumes:
+            - ./:/var/www
+            - ./docker/nginx/conf.d:/etc/nginx/conf.d
+        networks:
+            - sager-drone
+        depends_on:
+            - app
+
+    db:
+        image: mysql:8.0
+        container_name: sager_drone_db
+        restart: unless-stopped
+        environment:
+            MYSQL_DATABASE: sager_drone
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_PASSWORD: password
+            MYSQL_USER: sager
+        volumes:
+            - dbdata:/var/lib/mysql
+        ports:
+            - "3307:3306"
+        networks:
+            - sager-drone
+
+    mqtt:
+        image: eclipse-mosquitto:2
+        container_name: sager_drone_mqtt
+        restart: unless-stopped
+        ports:
+            - "1883:1883"
+            - "9001:9001"
+        volumes:
+            - ./docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+            - mqttdata:/mosquitto/data
+            - mqttlogs:/mosquitto/log
+        networks:
+            - sager-drone
+
+networks:
+    sager-drone:
+        driver: bridge
+
+volumes:
+    dbdata:
+        driver: local
+    mqttdata:
+        driver: local
+    mqttlogs:
+        driver: local
