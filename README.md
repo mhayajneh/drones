@@ -1,66 +1,366 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Sager Drone Tracking System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A Laravel-based backend system for real-time drone tracking via MQTT with RESTful APIs.
 
-## About Laravel
+## Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- ✅ Real-time MQTT drone data processing
+- ✅ Drone tracking with location history
+- ✅ Dangerous drone classification (height > 500m, speed > 10m/s)
+- ✅ Geofencing for restricted no-fly zones
+- ✅ GeoJSON flight path generation
+- ✅ JWT Authentication with role-based access control
+- ✅ Repository and Strategy design patterns
+- ✅ Comprehensive unit and feature tests
+- ✅ API documentation with Swagger/OpenAPI
+- ✅ Docker deployment ready
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Requirements
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP 8.2+
+- Composer
+- MySQL 8.0+
 
-## Learning Laravel
+## Installation
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Local Setup
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+1. **Clone and install dependencies**
+```bash
+unzip sager-drone-system.zip
+cd sager-drone-system
+composer install
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+2. **Environment configuration**
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
-## Laravel Sponsors
+3. **Configure .env file**
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=sager_drone
+DB_USERNAME=root
+DB_PASSWORD=
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+MQTT_HOST=127.0.0.1
+MQTT_PORT=1883
+MQTT_USERNAME=
+MQTT_PASSWORD=
+MQTT_CLIENT_ID=sager_drone_backend
 
-### Premium Partners
+JWT_SECRET=
+JWT_TTL=60
+```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+4. **Database setup**
+```bash
+php artisan migrate
+php artisan db:seed
+```
 
-## Contributing
+5. **Generate JWT secret**
+```bash
+php artisan jwt:secret
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+6. **Start the application**
+```bash
+php artisan serve
+php artisan mqtt:subscribe
+```
 
-## Code of Conduct
+### Docker Setup
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+1. **Build and start containers**
+```bash
+docker-compose up -d
+```
 
-## Security Vulnerabilities
+2. **Run migrations**
+```bash
+docker-compose exec app php artisan migrate
+docker-compose exec app php artisan db:seed
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+3. **Generate JWT Passport secret**
+```bash
+docker-compose exec app php artisan passport:install
+```
 
-## License
+The application will be available at `http://localhost:8000`
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## API Documentation
+
+Access Swagger UI at: `http://localhost:8000/api/documentation`
+
+### Authentication
+
+**Register User**
+```http
+POST /api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Admin User",
+  "email": "admin@example.com",
+  "password": "password123",
+  "password_confirmation": "password123",
+  "role": "admin"
+}
+```
+
+**Login**
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "password123"
+}
+
+Response:
+{
+  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+  "token_type": "bearer",
+  "expires_in": 3600
+}
+```
+
+**Use token in subsequent requests**
+```http
+Authorization: Bearer {access_token}
+```
+
+### Drone APIs
+
+**List All Drones**
+```http
+GET /api/drones
+GET /api/drones?serial=1581F6Q8
+GET /api/drones?per_page=20&page=1
+Authorization: Bearer {token}
+```
+
+**List Online Drones**
+```http
+GET /api/drones/online
+Authorization: Bearer {token}
+```
+
+**Find Drones Near Location**
+```http
+GET /api/drones/nearby?latitude=31.9783&longitude=35.8309&radius=5
+Authorization: Bearer {token}
+```
+
+**Get Drone Flight Path (GeoJSON)**
+```http
+GET /api/drones/{serial}/flight-path
+Authorization: Bearer {token}
+
+Response:
+{
+  "type": "FeatureCollection",
+  "features": [{
+    "type": "Feature",
+    "geometry": {
+      "type": "LineString",
+      "coordinates": [[35.8309, 31.9783], ...]
+    },
+    "properties": {
+      "serial": "1581F6Q8D81F6Q8DEYN10",
+      "start_time": "2024-01-01T10:00:00Z",
+      "end_time": "2024-01-01T10:30:00Z"
+    }
+  }]
+}
+```
+
+**List Dangerous Drones**
+```http
+GET /api/drones/dangerous
+Authorization: Bearer {token}
+
+Response:
+{
+  "data": [{
+    "serial": "1581F6Q8D81F6Q8DEYN10",
+    "latitude": 31.9783,
+    "longitude": 35.8309,
+    "height": 520.5,
+    "speed": 12.3,
+    "reasons": ["high_altitude", "high_speed"],
+    "last_seen": "2024-01-01T10:00:00Z"
+  }]
+}
+```
+
+**Mark Drone as Safe (Admin only)**
+```http
+POST /api/drones/{serial}/mark-safe
+Authorization: Bearer {admin_token}
+
+Response:
+{
+  "message": "Drone marked as safe",
+  "serial": "1581F6Q8D81F6Q8DEYN10"
+}
+```
+
+## Testing
+
+**Run all tests**
+```bash
+php artisan test
+```
+
+**Run specific test suites**
+```bash
+php artisan test --testsuite=Unit
+php artisan test --testsuite=Feature
+```
+
+**With coverage**
+```bash
+php artisan test --coverage
+```
+
+## Design Patterns
+
+### Repository Pattern
+- `DroneRepository` - Abstracts data access layer
+- `LocationHistoryRepository` - Manages location data
+- Enables easy testing with mock repositories
+
+### Strategy Pattern
+- `DangerClassificationStrategy` - Interface for classification rules
+- `HighAltitudeStrategy` - Checks altitude > 500m
+- `HighSpeedStrategy` - Checks speed > 10m/s
+- `GeofenceStrategy` - Checks no-fly zones
+- Easily extensible for new classification rules
+
+### Service Pattern
+- `DroneService` - Business logic layer
+- `MqttService` - MQTT communication handling
+- Separates concerns and improves testability
+
+## Architecture
+
+```
+app/
+├── Console/Commands/
+│   └── MqttSubscribeCommand.php
+├── Http/
+│   ├── Controllers/
+│   │   ├── AuthController.php
+│   │   └── DroneController.php
+│   ├── Middleware/
+│   │   └── CheckRole.php
+│   └── Requests/
+│       ├── NearbyDronesRequest.php
+│       └── AuthRequest.php
+├── Models/
+│   ├── Drone.php
+│   ├── LocationHistory.php
+│   ├── NoFlyZone.php
+│   └── User.php
+├── Repositories/
+│   ├── DroneRepository.php
+│   └── LocationHistoryRepository.php
+├── Services/
+│   ├── DroneService.php
+│   └── MqttService.php
+└── Strategies/
+    ├── DangerClassificationStrategy.php
+    ├── HighAltitudeStrategy.php
+    ├── HighSpeedStrategy.php
+    └── GeofenceStrategy.php
+```
+
+## MQTT Topic Structure
+
+The system subscribes to: `device/+/osd`
+
+Example: `device/1581F6Q8D81F6Q8DEYN10/osd`
+
+### Payload Example
+```json
+{
+  "elevation": 0,
+  "gear": 1,
+  "height": 17.2,
+  "latitude": 31.978369,
+  "longitude": 35.830921,
+  "horizontal_speed": 0,
+  "vertical_speed": 0,
+  "total_flight_time": 360.5,
+  "total_flight_distance": 459.4
+}
+```
+
+## Default Users
+
+**Admin User**
+- Email: admin@admin.com
+- Password: admin123
+- Role: admin
+
+**Regular User**
+- Email: user@user.com
+- Password: user123
+- Role: user
+
+## Configuration
+
+### No-Fly Zones
+
+Configure in database seeder or via API:
+
+```sql
+INSERT INTO no_fly_zones (name, latitude, longitude, radius, created_at, updated_at)
+VALUES ('Airport Zone', 31.9780, 35.8300, 5000, NOW(), NOW());
+```
+
+### Danger Classification Thresholds
+
+Modify in `.env`:
+```env
+DANGER_HEIGHT_THRESHOLD=500
+DANGER_SPEED_THRESHOLD=10
+```
+
+## Monitoring
+
+**Check MQTT Connection**
+```bash
+php artisan mqtt:status
+```
+
+**View Logs**
+```bash
+tail -f storage/logs/laravel.log
+```
+
+## Production Deployment
+
+1. Set `APP_ENV=production` in `.env`
+2. Run `php artisan config:cache`
+3. Run `php artisan route:cache`
+4. Set up supervisor for MQTT subscriber:
+
+```ini
+[program:mqtt-subscriber]
+process_name=%(program_name)s
+command=php /path/to/artisan mqtt:subscribe
+autostart=true
+autorestart=true
+user=www-data
+redirect_stderr=true
+stdout_logfile=/path/to/storage/logs/mqtt.log
+```

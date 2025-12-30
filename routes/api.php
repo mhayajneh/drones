@@ -24,7 +24,6 @@ Route::middleware('auth:api')->group(function () {
         Route::get('me', [\App\Http\Controllers\AuthController::class, 'me']);
     });
 
-    // Drone routes
     Route::prefix('drones')->group(function () {
         Route::get('/', [\App\Http\Controllers\DroneController::class, 'index']);
         Route::get('/online', [\App\Http\Controllers\DroneController::class, 'online']);
@@ -32,7 +31,6 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/dangerous', [\App\Http\Controllers\DroneController::class, 'dangerous']);
         Route::get('/{serial}/flight-path', [\App\Http\Controllers\DroneController::class, 'flightPath']);
 
-        // Admin only routes
         Route::middleware('role:admin')->group(function () {
             Route::post('/{serial}/mark-safe', [\App\Http\Controllers\DroneController::class, 'markSafe']);
         });

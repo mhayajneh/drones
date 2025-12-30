@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Repositories\DroneRepository;
+use App\Services\DroneService;
 use Illuminate\Http\Request;
 
 /**

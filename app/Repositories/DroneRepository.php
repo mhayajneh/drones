@@ -46,27 +46,11 @@ class DroneRepository
 
     public function getNearby(float $latitude, float $longitude, float $radiusKm = 5): Collection
     {
-        $radiusMeters = $radiusKm * 1000;
-        $earthRadius = 6371000; // Earth's radius in meters
+        if (config('database.default') === 'sqlite') {
+            return $this->getNearbyUsingPhp($latitude, $longitude, $radiusKm);
+        }
 
-        // Haversine formula for calculating distance
-        $query = $this->model->online()
-            ->selectRaw("
-                *,
-                (
-                    {$earthRadius} * acos(
-                        cos(radians(?)) *
-                        cos(radians(latitude)) *
-                        cos(radians(longitude) - radians(?)) +
-                        sin(radians(?)) *
-                        sin(radians(latitude))
-                    )
-                ) AS distance
-            ", [$latitude, $longitude, $latitude])
-            ->having('distance', '<=', $radiusMeters)
-            ->orderBy('distance', 'asc');
-
-        return $query->get();
+        return $this->getNearbyUsingSql($latitude, $longitude, $radiusKm);
     }
 
     public function updateOrCreate(string $serial, array $data): Drone
@@ -114,5 +98,59 @@ class DroneRepository
         return $this->model->online()
             ->where('last_seen_at', '<', now()->subMinutes($minutesStale))
             ->update(['is_online' => false]);
+    }
+
+    private function getNearbyUsingSql(float $latitude, float $longitude, float $radiusKm): Collection
+    {
+        $radiusMeters = $radiusKm * 1000;
+        $earthRadius = 6371000;
+
+        return $this->model->online()
+            ->selectRaw("
+            *,
+            (
+                {$earthRadius} * acos(
+                    cos(radians(?)) *
+                    cos(radians(latitude)) *
+                    cos(radians(longitude) - radians(?)) +
+                    sin(radians(?)) *
+                    sin(radians(latitude))
+                )
+            ) AS distance
+        ", [$latitude, $longitude, $latitude])
+            ->having('distance', '<=', $radiusMeters)
+            ->orderBy('distance')
+            ->get();
+    }
+
+    private function getNearbyUsingPhp(float $lat, float $lng, float $radiusKm): Collection
+    {
+        return $this->model
+            ->online()
+            ->get()
+            ->filter(function ($drone) use ($lat, $lng, $radiusKm) {
+                return $this->haversine(
+                        $lat,
+                        $lng,
+                        $drone->latitude,
+                        $drone->longitude
+                    ) <= $radiusKm;
+            })
+            ->values();
+    }
+
+    private function haversine($lat1, $lon1, $lat2, $lon2): float
+    {
+        $earthRadius = 6371;
+
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+
+        $a = sin($dLat / 2) ** 2 +
+            cos(deg2rad($lat1)) *
+            cos(deg2rad($lat2)) *
+            sin($dLon / 2) ** 2;
+
+        return 2 * $earthRadius * asin(min(1, sqrt($a)));
     }
 }
